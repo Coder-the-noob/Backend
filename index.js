@@ -1,16 +1,15 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
 const port = 3000;
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-
-
-const url = "mongodb+srv://missionSCIC:Bg7fwDjsjCj2tIQ4@cluster0.nfj0fog.mongodb.net/?appName=Cluster0";
+const url =
+  "mongodb+srv://missionSCIC:Bg7fwDjsjCj2tIQ4@cluster0.nfj0fog.mongodb.net/?appName=Cluster0";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(url, {
@@ -18,7 +17,7 @@ const client = new MongoClient(url, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
-  }
+  },
 });
 
 async function run() {
@@ -26,21 +25,68 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    const database = client.db('petsService');
-    const petServices = database.collection('services');
+    const database = client.db("petsService");
+    const petServices = database.collection("services");
 
-    app.post('/services', async (req, res) => {
-        const data= req.body;
-        const date = new Date();
-        data.createdAt = date;
-        console.log(data);
-        const result = await petServices.insertOne(data);
-        res.send(result);
+    // post services to database
+    app.post("/services", async (req, res) => {
+      const data = req.body;
+      const date = new Date();
+      data.createdAt = date;
+      console.log(data);
+      const result = await petServices.insertOne(data);
+      res.send(result);
     });
 
-    // Send a ping to confirm a successful connection
+    // get services from database
+    app.get("/services", async (req, res) => {
+      const result = await petServices.find().toArray();
+      res.send(result);
+    });
+
+    // get services by category
+    app.get("/services/category/:categoryName", async (req, res) => {
+      const categoryName = req.params.categoryName;
+      const query = { category: categoryName };
+      const result = await petServices.find(query).toArray();
+      res.send(result);
+    });
+
+    // get product delatils by id
+    app.get("/services/products-details/:id", async (req, res) => {
+      const id = req.params.id;
+
+      console.log("Backend received ID:", id);
+        
+
+      try {
+        let query;
+        if (id.length === 24) {
+          try {
+            query = { _id: new ObjectId(id) };
+          } catch {
+            query = { _id: id };
+          }
+        } else {
+          query = { _id: id }; 
+        }
+
+        const result = await petServices.findOne(query);
+
+        if (!result) {
+          return res.status(404).send({ message: "Service not found" });
+        }
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Server error", error });
+      }
+    });
+
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -48,8 +94,8 @@ async function run() {
 }
 run().catch(console.dir);
 
-app.get('/', (req, res) => {
-  res.send('Assignment 10 is running');
+app.get("/", (req, res) => {
+  res.send("Assignment 10 is running");
 });
 
 app.listen(port, () => {
