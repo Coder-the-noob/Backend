@@ -57,7 +57,6 @@ async function run() {
       const id = req.params.id;
 
       console.log("Backend received ID:", id);
-        
 
       try {
         let query;
@@ -68,7 +67,7 @@ async function run() {
             query = { _id: id };
           }
         } else {
-          query = { _id: id }; 
+          query = { _id: id };
         }
 
         const result = await petServices.findOne(query);
@@ -82,6 +81,61 @@ async function run() {
         res.status(500).send({ message: "Server error", error });
       }
     });
+
+    // get listings by user email
+    app.get("/my-listings/:email", async (req, res) => {
+      const email = req.params.email;
+
+      try {
+        const listings = await petServices.find({ email }).toArray();
+        res.send(listings);
+      } catch (error) {
+        res.status(500).send({ message: "Server Error", error });
+      }
+    });
+
+    app.delete("/services/:id", async (req, res) => {
+      const id = req.params.id;
+
+      try {
+        const result = await petServices.deleteOne({
+          $or: [
+            { _id: id }, 
+            { _id: new ObjectId(id) }, 
+          ],
+        });
+
+        console.log("Delete result:", result);
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send({ message: "Delete Failed", error });
+      }
+    });
+
+    app.put("/services/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+
+      try {
+        const result = await petServices.updateOne(
+          {
+            $or: [
+              { _id: id }, 
+              { _id: new ObjectId(id) }, 
+            ],
+          },
+          { $set: updatedData }
+        );
+
+        res.send(result);
+      } catch (error) {
+        console.log(error);
+        res.status(500).send({ message: "Update Failed", error });
+      }
+    });
+
+    
 
     await client.db("admin").command({ ping: 1 });
     console.log(
