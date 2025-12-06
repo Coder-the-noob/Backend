@@ -133,12 +133,28 @@ async function run() {
       try {
         const listings = await petServices
           .find({})
-          .sort({ createdAt: -1 }) 
+          .sort({ createdAt: -1 })
           .limit(6)
           .toArray();
 
         res.send(listings);
       } catch (error) {
+        res.status(500).send({ message: "Server Error", error });
+      }
+    });
+
+    app.get("/my-orders/:email", async (req, res) => {
+      const email = req.params.email;
+
+      try {
+        const orders = await petServices
+          .find({ buyerEmail: email })
+          .sort({ createdAt: -1 })
+          .toArray();
+
+        res.send(orders);
+      } catch (error) {
+        console.log(error);
         res.status(500).send({ message: "Server Error", error });
       }
     });
