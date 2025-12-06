@@ -27,6 +27,8 @@ async function run() {
 
     const database = client.db("petsService");
     const petServices = database.collection("services");
+    const ordersCollection = database.collection("orders");
+
 
     // post services to database
     app.post("/services", async (req, res) => {
@@ -147,7 +149,7 @@ async function run() {
       const email = req.params.email;
 
       try {
-        const orders = await petServices
+        const orders = await ordersCollection
           .find({ buyerEmail: email })
           .sort({ createdAt: -1 })
           .toArray();
@@ -157,6 +159,19 @@ async function run() {
         console.log(error);
         res.status(500).send({ message: "Server Error", error });
       }
+    });
+
+    app.post("/orders", async(req, res)=>{
+        try{
+            const order = req.body;
+            ordersCollection.createdAt = new Date();
+
+            const result = await ordersCollection.insertOne(order);
+            res.send(result);
+        }catch(error){
+            console.log(error);
+            res.status(500).send({message: "Could not place order", error});
+        }
     });
 
     await client.db("admin").command({ ping: 1 });
