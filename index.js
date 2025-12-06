@@ -99,10 +99,7 @@ async function run() {
 
       try {
         const result = await petServices.deleteOne({
-          $or: [
-            { _id: id }, 
-            { _id: new ObjectId(id) }, 
-          ],
+          $or: [{ _id: id }, { _id: new ObjectId(id) }],
         });
 
         console.log("Delete result:", result);
@@ -120,10 +117,7 @@ async function run() {
       try {
         const result = await petServices.updateOne(
           {
-            $or: [
-              { _id: id }, 
-              { _id: new ObjectId(id) }, 
-            ],
+            $or: [{ _id: id }, { _id: new ObjectId(id) }],
           },
           { $set: updatedData }
         );
@@ -135,7 +129,19 @@ async function run() {
       }
     });
 
-    
+    app.get("/recent-listings", async (req, res) => {
+      try {
+        const listings = await petServices
+          .find({})
+          .sort({ createdAt: -1 }) 
+          .limit(6)
+          .toArray();
+
+        res.send(listings);
+      } catch (error) {
+        res.status(500).send({ message: "Server Error", error });
+      }
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
