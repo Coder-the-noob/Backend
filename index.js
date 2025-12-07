@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 const url =
-  "mongodb+srv://missionSCIC:Bg7fwDjsjCj2tIQ4@cluster0.nfj0fog.mongodb.net/?appName=Cluster0";
+  `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.nfj0fog.mongodb.net/?appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(url, {
@@ -23,7 +23,7 @@ const client = new MongoClient(url, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const database = client.db("petsService");
     const petServices = database.collection("services");
@@ -174,7 +174,7 @@ async function run() {
         }
     });
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
