@@ -28,6 +28,8 @@ async function run() {
     const database = client.db("petsService");
     const petServices = database.collection("services");
     const ordersCollection = database.collection("orders");
+    const usersCollection = database.collection("users");
+
 
 
     // post services to database
@@ -161,18 +163,70 @@ async function run() {
       }
     });
 
-    app.post("/orders", async(req, res)=>{
-        try{
-            const order = req.body;
-            ordersCollection.createdAt = new Date();
+    app.post("/orders", async (req, res) => {
+  try {
+    const order = req.body;
+    order.createdAt = new Date(); // ✅ correct
 
-            const result = await ordersCollection.insertOne(order);
-            res.send(result);
-        }catch(error){
-            console.log(error);
-            res.status(500).send({message: "Could not place order", error});
-        }
-    });
+    const result = await ordersCollection.insertOne(order);
+    res.send(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Could not place order", error });
+  }
+});
+
+
+    // ✅ Upsert user (create/update user in DB)
+app.put("/users", async (req, res) => {
+  const user = req.body; // { name, email, photoURL }
+
+  if (!user?.email) {
+    return res.status(400).send({ message: "Email required" });
+  }
+
+  const filter = { email: user.email };
+
+  const updateDoc = {
+    $set: {
+      name: user.name || "",
+      email: user.email,
+      photoURL: user.photoURL || "",
+      updatedAt: new Date(),
+    },
+    $setOnInsert: {
+      role: "user",
+      createdAt: new Date(),
+    },
+  };
+
+  const result = await usersCollection.updateOne(filter, updateDoc, {
+    upsert: true,
+  });
+
+  res.send({ ok: true, result });
+});
+
+// ✅ Get role by email (used by useRole hook)
+app.get("/users/role/:email", async (req, res) => {
+  const email = req.params.email;
+  const user = await usersCollection.findOne({ email });
+  res.send({ role: user?.role || "user" });
+});
+
+// ✅ Make Admin (one time use for demo/admin setup)
+app.patch("/users/make-admin/:email", async (req, res) => {
+  const email = req.params.email;
+
+  const result = await usersCollection.updateOne(
+    { email },
+    { $set: { role: "admin", updatedAt: new Date() } },
+    { upsert: true }
+  );
+
+  res.send({ ok: true, result });
+});
+
 
     // await client.db("admin").command({ ping: 1 });
     console.log(
